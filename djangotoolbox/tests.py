@@ -1,4 +1,5 @@
 from __future__ import with_statement
+from __future__ import absolute_import
 from decimal import Decimal, InvalidOperation
 import time
 
@@ -12,6 +13,9 @@ from django.test import TestCase
 from django.utils.unittest import expectedFailure, skip
 
 from .fields import ListField, SetField, DictField, EmbeddedModelField
+from six.moves import map
+from six.moves import range
+from six.moves import zip
 
 
 def count_calls(func):
@@ -99,7 +103,7 @@ class IterableFieldsTest(TestCase):
     unordered_ints = [4, 2, 6, 1]
 
     def setUp(self):
-        for i, float in zip(range(1, 5), IterableFieldsTest.floats):
+        for i, float in zip(list(range(1, 5)), IterableFieldsTest.floats):
             ListModel(integer=i, floating_point=float,
                       names=IterableFieldsTest.names[:i]).save()
 
@@ -217,7 +221,7 @@ class IterableFieldsTest(TestCase):
     def test_setfield(self):
         setdata = [1, 2, 3, 2, 1]
         # At the same time test value conversion.
-        SetModel(setfield=map(str, setdata)).save()
+        SetModel(setfield=list(map(str, setdata))).save()
         item = SetModel.objects.filter(setfield=3)[0]
         self.assertEqual(item.setfield, set(setdata))
         # This shouldn't raise an error because the default value is
@@ -392,29 +396,29 @@ class EmbeddedModelFieldTest(TestCase):
 
     def test_typed_listfield(self):
         EmbeddedModelFieldModel.objects.create(
-            typed_list=[SetModel(setfield=range(3)),
-                        SetModel(setfield=range(9))],
-            ordered_list=[Target(index=i) for i in xrange(5, 0, -1)])
+            typed_list=[SetModel(setfield=list(range(3))),
+                        SetModel(setfield=list(range(9)))],
+            ordered_list=[Target(index=i) for i in range(5, 0, -1)])
         obj = EmbeddedModelFieldModel.objects.get()
         self.assertIn(5, obj.typed_list[1].setfield)
         self.assertEqual([target.index for target in obj.ordered_list],
-                         range(1, 6))
+                         list(range(1, 6)))
 
     def test_untyped_listfield(self):
         EmbeddedModelFieldModel.objects.create(untyped_list=[
             EmbeddedModel(someint=7),
-            OrderedListModel(ordered_ints=range(5, 0, -1)),
+            OrderedListModel(ordered_ints=list(range(5, 0, -1))),
             SetModel(setfield=[1, 2, 2, 3])])
         instances = EmbeddedModelFieldModel.objects.get().untyped_list
         for instance, cls in zip(instances,
                                  [EmbeddedModel, OrderedListModel, SetModel]):
             self.assertIsInstance(instance, cls)
         self.assertNotEqual(instances[0].auto_now, None)
-        self.assertEqual(instances[1].ordered_ints, range(1, 6))
+        self.assertEqual(instances[1].ordered_ints, list(range(1, 6)))
 
     def test_untyped_dict(self):
         EmbeddedModelFieldModel.objects.create(untyped_dict={
-            'a': SetModel(setfield=range(3)),
+            'a': SetModel(setfield=list(range(3))),
             'b': DictModel(dictfield={'a': 1, 'b': 2}),
             'c': DictModel(dictfield={}, auto_now={'y': 1})})
         data = EmbeddedModelFieldModel.objects.get().untyped_dict

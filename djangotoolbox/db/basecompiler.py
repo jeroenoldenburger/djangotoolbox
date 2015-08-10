@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import datetime
 
 import django
@@ -233,7 +234,7 @@ class NonrelQuery(object):
                 raise DatabaseError("This database doesn't support filtering "
                                     "on non-primary key ForeignKey fields.")
 
-            field = (f for f in opts.fields if f.column == column).next()
+            field = next((f for f in opts.fields if f.column == column))
             assert field.rel is not None
 
         value = self._normalize_lookup_value(
@@ -421,7 +422,7 @@ class NonrelCompiler(SQLCompiler):
         """
         self.pre_sql_setup()
 
-        aggregates = self.query.aggregate_select.values()
+        aggregates = list(self.query.aggregate_select.values())
 
         # Simulate a count().
         if aggregates:
@@ -547,9 +548,9 @@ class NonrelCompiler(SQLCompiler):
         only_load = self.deferred_to_columns()
         if only_load:
             db_table = self.query.model._meta.db_table
-            only_load = dict((k, v) for k, v in only_load.items()
+            only_load = dict((k, v) for k, v in list(only_load.items())
                              if v or k == db_table)
-            if len(only_load.keys()) > 1:
+            if len(list(only_load.keys())) > 1:
                 raise DatabaseError("Multi-table inheritance is not "
                                     "supported by non-relational DBs %s." %
                                     repr(only_load))

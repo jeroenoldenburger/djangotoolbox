@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 from django.forms import widgets
 from django.template.defaultfilters import filesizeformat
 from django.utils.safestring import mark_safe

@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 def make_tls_property(default=None):
     """
     Creates a class-wide instance property with a thread-specific

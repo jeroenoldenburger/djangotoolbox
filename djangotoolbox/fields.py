@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # All fields except for BlobField written by Jonas Haag <jonas@lophus.org>
 
 from django.core.exceptions import ValidationError
@@ -6,6 +7,7 @@ from django.db import models
 from django.db.models.fields.subclassing import Creator
 from django.db.utils import IntegrityError
 from django.db.models.fields.related import add_lazy_relation
+import six
 
 
 __all__ = ('RawField', 'ListField', 'SetField', 'DictField',
@@ -85,7 +87,7 @@ class AbstractIterableField(models.Field):
         if item_metaclass and issubclass(item_metaclass, models.SubfieldBase):
             setattr(cls, self.name, Creator(self))
 
-        if isinstance(self.item_field, models.ForeignKey) and isinstance(self.item_field.rel.to, basestring):
+        if isinstance(self.item_field, models.ForeignKey) and isinstance(self.item_field.rel.to, six.string_types):
             """
             If rel.to is a string because the actual class is not yet defined, look up the
             actual class later.  Refer to django.models.fields.related.RelatedField.contribute_to_class.
@@ -225,7 +227,7 @@ class DictField(AbstractIterableField):
 
     def _map(self, function, iterable, *args, **kwargs):
         return self._type((key, function(value, *args, **kwargs))
-                          for key, value in iterable.iteritems())
+                          for key, value in six.iteritems(iterable))
 
     def validate(self, values, model_instance):
         if not isinstance(values, dict):
@@ -233,7 +235,7 @@ class DictField(AbstractIterableField):
                                   type(values))
 
 
-class EmbeddedModelField(models.Field):
+class EmbeddedModelField(six.with_metaclass(models.SubfieldBase, models.Field)):
     """
     Field that allows you to embed a model instance.
 
@@ -245,7 +247,6 @@ class EmbeddedModelField(models.Field):
           the embedded instance (not just pre_save, get_db_prep_* and
           to_python).
     """
-    __metaclass__ = models.SubfieldBase
 
     def __init__(self, embedded_model=None, *args, **kwargs):
         self.embedded_model = embedded_model
@@ -271,7 +272,7 @@ class EmbeddedModelField(models.Field):
         our "model" attribute in its contribute_to_class method).
         """
         self._model = model
-        if model is not None and isinstance(self.embedded_model, basestring):
+        if model is not None and isinstance(self.embedded_model, six.string_types):
 
             def _resolve_lookup(self_, resolved_model, model):
                 self.embedded_model = resolved_model
